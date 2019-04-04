@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/stat.h> 
 
 //切割字符串
 void split(char *src, const char *separator, char **dest, int *num)
@@ -57,7 +58,7 @@ void getAFCClient(char *udid, char *appid, afc_client_t *afc_client)
         *error = -10;
         goto l_device;
     }
-    //    lockdownd_client_free(lockdownd_client);
+    //lockdownd_client_free(lockdownd_client);
 
     house_arrest_error_t err = 0;
     house_arrest_client_t client = NULL;
@@ -241,13 +242,15 @@ int dirIsExists(afc_client_t client, char *currdir, char *todir)
 afc_error_t copyFileToDevice(afc_client_t client, char *sourceFilePath, char *targetDir)
 {
     afc_error_t error = 0;
+    //获取文件大小
+    int bysize=getFileSize(sourceFilePath);
 
     FILE *infile;
     infile = fopen(sourceFilePath, "rb");
-    unsigned char *bs = malloc(sizeof(unsigned char *) * 102400);
+    unsigned char *bs = malloc(bysize*sizeof(unsigned char *));
     if (infile == NULL)
         error = 1;
-    int filelen = fread(bs, sizeof(unsigned char), 102400, infile);
+    int filelen = fread(bs,1, bysize, infile);
     fclose(infile);
 
     error = 0;
@@ -290,6 +293,13 @@ afc_error_t copyFileToDevice(afc_client_t client, char *sourceFilePath, char *ta
     free(bs);
     return error;
 }
+int getFileSize(char* filename)  
+{
+    struct stat statbuf;
+    stat(filename,&statbuf);
+    int size=statbuf.st_size;
+    return size;
+}  
 int main(int argc, const char *args[])
 {
     if (argc > 1)
