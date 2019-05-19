@@ -78,7 +78,7 @@ ideviceprovision-ideviceprovision.o: ideviceprovision.c ../config.h \
   /usr/include/sys/_types/_socklen_t.h \
   /usr/include/sys/_types/_iovec_t.h /usr/include/netinet6/in6.h \
   ../include/libimobiledevice/libimobiledevice.h \
-  /usr/local/include/plist/plist.h \
+  /usr/local/Cellar/libplist/2.0.0_1/include/plist/plist.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stdarg.h \
   ../include/libimobiledevice/lockdown.h \
   ../include/libimobiledevice/misagent.h ../common/utils.h
@@ -343,7 +343,7 @@ ideviceprovision-ideviceprovision.o: ideviceprovision.c ../config.h \
 
 ../include/libimobiledevice/libimobiledevice.h:
 
-/usr/local/include/plist/plist.h:
+/usr/local/Cellar/libplist/2.0.0_1/include/plist/plist.h:
 
 /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stdarg.h:
 

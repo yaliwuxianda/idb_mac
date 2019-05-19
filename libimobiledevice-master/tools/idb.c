@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <sys/stat.h> 
+#include <sys/stat.h>
 
 //切割字符串
 void split(char *src, const char *separator, char **dest, int *num)
@@ -239,18 +239,21 @@ int dirIsExists(afc_client_t client, char *currdir, char *todir)
     }
     return isexists;
 }
+/*
+把电脑上的文件推送到设备
+*/
 afc_error_t copyFileToDevice(afc_client_t client, char *sourceFilePath, char *targetDir)
 {
     afc_error_t error = 0;
     //获取文件大小
-    int bysize=getFileSize(sourceFilePath);
+    int bysize = getFileSize(sourceFilePath);
 
     FILE *infile;
     infile = fopen(sourceFilePath, "rb");
-    unsigned char *bs = malloc(bysize*sizeof(unsigned char *));
+    unsigned char *bs = malloc(bysize * sizeof(unsigned char *));
     if (infile == NULL)
         error = 1;
-    int filelen = fread(bs,1, bysize, infile);
+    int filelen = fread(bs, 1, bysize, infile);
     fclose(infile);
 
     error = 0;
@@ -293,13 +296,62 @@ afc_error_t copyFileToDevice(afc_client_t client, char *sourceFilePath, char *ta
     free(bs);
     return error;
 }
-int getFileSize(char* filename)  
+afc_error_t copyFileFromDevice(afc_client_t client, char *sourceFilePath, char *targetDir)
+{
+    afc_error_t error = 0;
+    //每次计划读取的字节数
+    int filelen = 102400;
+    unsigned char *bs = malloc(filelen);
+
+    long filehandle = 0;
+
+    error = afc_file_open(client, sourceFilePath, AFC_FOPEN_RDONLY, &filehandle);
+    if (error == 0)
+    {
+        //实际读取的字节数量
+        int bytesReaden = 0;
+
+        error = afc_file_read(client, filehandle, bs, filelen, &bytesReaden);
+
+        if (error == 0)
+        {
+            printf("%s\n", targetDir);
+            //开始写入到输出文件
+            FILE *outfile = fopen(targetDir, "w+");
+            if (outfile)
+            {
+                fwrite(bs, bytesReaden, 1, outfile);
+                free(bs);
+                while (bytesReaden > 0)
+                {
+                    printf("%d\n",bytesReaden);
+                    bs = malloc(filelen);
+                    error = afc_file_read(client, filehandle, bs, filelen, &bytesReaden);
+                    if (error == 0)
+                    {
+                        fwrite(bs, bytesReaden, 1, outfile);
+                    }
+                    free(bs);
+                }
+                //关闭文件读写
+                fclose(outfile);
+            }
+        }
+        if (error == 0)
+            error = afc_file_close(client, filehandle);
+        else
+            error = afc_file_close(client, filehandle);
+    }
+
+    return error;
+}
+int getFileSize(char *filename)
 {
     struct stat statbuf;
-    stat(filename,&statbuf);
-    int size=statbuf.st_size;
+    stat(filename, &statbuf);
+    int size = statbuf.st_size;
     return size;
-}  
+}
 int main(int argc, const char *args[])
 {
     if (argc > 1)
@@ -511,6 +563,18 @@ int main(int argc, const char *args[])
                     char *tdir = ks[2];
 
                     afc_error_t afc_err = copyFileToDevice(client, pdir, tdir);
+
+                    if (afc_err == 0)
+                        printf("Success\n");
+                    else
+                        printf("Failed %d\n", afc_err);
+                }
+                else if (strcmp(kscommand, "pull") == 0)
+                {
+                    char *pdir = ks[1];
+                    char *tdir = ks[2];
+
+                    afc_error_t afc_err = copyFileFromDevice(client, pdir, tdir);
 
                     if (afc_err == 0)
                         printf("Success\n");

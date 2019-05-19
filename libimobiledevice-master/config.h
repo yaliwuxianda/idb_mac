@@ -32,7 +32,7 @@
 #define HAVE_MEMORY_H 1
 
 /* Define if you have OpenSSL support */
-#define HAVE_OPENSSL 1
+/* #undef HAVE_OPENSSL */
 
 /* Define if you have POSIX threads libraries and header files. */
 /* #undef HAVE_PTHREAD */

@@ -17,15 +17,15 @@ old_library='libinternalcommon.a'
 inherited_linker_flags=' '
 
 # Libraries that this one depends upon.
-dependency_libs=' -L/usr/local/Cellar/usbmuxd/HEAD-873252d_1/lib -lusbmuxd -L/usr/local/lib /usr/local/lib/libplist.la'
+dependency_libs=' -L/usr/local/Cellar/usbmuxd/HEAD-873252d_1/lib -lusbmuxd -L/usr/local/Cellar/libplist/2.0.0_1/lib -lplist'
 
 # Names of additional weak libraries provided by this library
 weak_library_names=''
 
 # Version information for libinternalcommon.
-current=4
-age=1
-revision=0
+current=
+age=
+revision=
 
 # Is this an already installed library?
 installed=no

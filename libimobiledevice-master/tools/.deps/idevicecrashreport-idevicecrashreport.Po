@@ -53,7 +53,8 @@ idevicecrashreport-idevicecrashreport.o: idevicecrashreport.c ../config.h \
   /usr/include/sys/_types/_fd_isset.h /usr/include/sys/_types/_fd_zero.h \
   /usr/include/sys/_types/_fd_copy.h /usr/include/sys/_select.h \
   /usr/include/sys/_types/_uuid_t.h /usr/include/gethostuuid.h \
-  ../common/utils.h /usr/local/include/plist/plist.h \
+  ../common/utils.h \
+  /usr/local/Cellar/libplist/2.0.0_1/include/plist/plist.h \
   /usr/include/sys/types.h /usr/include/sys/_types/_u_char.h \
   /usr/include/sys/_types/_u_short.h /usr/include/sys/_types/_u_int.h \
   /usr/include/sys/_types/_caddr_t.h /usr/include/sys/_types/_blkcnt_t.h \
@@ -275,7 +276,7 @@ idevicecrashreport-idevicecrashreport.o: idevicecrashreport.c ../config.h \
 
 ../common/utils.h:
 
-/usr/local/include/plist/plist.h:
+/usr/local/Cellar/libplist/2.0.0_1/include/plist/plist.h:
 
 /usr/include/sys/types.h:
 

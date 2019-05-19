@@ -76,49 +76,29 @@ userpref.lo: userpref.c ../config.h /usr/include/stdio.h \
   /usr/include/sys/_types/_timespec.h /usr/include/sys/_select.h \
   /usr/include/gethostuuid.h \
   /usr/local/Cellar/usbmuxd/HEAD-873252d_1/include/usbmuxd.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/pem.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/e_os2.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/opensslconf.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/bio.h \
-  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stdarg.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/crypto.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/stack.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/safestack.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/opensslv.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/ossl_typ.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/symhacks.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/evp.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/objects.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/obj_mac.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/asn1.h \
-  /usr/include/time.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/bn.h \
-  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/limits.h \
-  /usr/include/limits.h /usr/include/machine/limits.h \
-  /usr/include/i386/limits.h /usr/include/i386/_limits.h \
-  /usr/include/sys/syslimits.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/x509.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/buffer.h \
+  /usr/local/Cellar/gnutls/3.5.19/include/gnutls/gnutls.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stddef.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/__stddef_max_align_t.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/ec.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/ecdsa.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/ecdh.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/rsa.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/dsa.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/dh.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/sha.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/x509_vfy.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/lhash.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/pkcs7.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/pem2.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/x509v3.h \
-  /usr/local/Cellar/openssl/1.0.2q/include/openssl/conf.h \
+  /usr/include/time.h \
+  /usr/local/Cellar/gnutls/3.5.19/include/gnutls/compat.h \
+  /usr/local/Cellar/gnutls/3.5.19/include/gnutls/crypto.h \
+  /usr/local/Cellar/gnutls/3.5.19/include/gnutls/x509.h \
+  /usr/local/Cellar/gnutls/3.5.19/include/gnutls/pkcs7.h \
+  /usr/local/include/gcrypt.h \
+  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stdarg.h \
+  /usr/local/include/gpg-error.h /usr/include/sys/socket.h \
+  /usr/include/machine/_param.h /usr/include/i386/_param.h \
+  /usr/include/net/net_kev.h /usr/include/sys/_types/_sa_family_t.h \
+  /usr/include/sys/_types/_socklen_t.h \
+  /usr/include/sys/_types/_iovec_t.h /usr/include/sys/time.h \
+  /usr/include/sys/_types/_timeval64.h \
+  /usr/local/Cellar/libtasn1/4.13/include/libtasn1.h \
   /usr/include/dirent.h /usr/include/sys/dirent.h /usr/include/libgen.h \
   /usr/include/sys/stat.h /usr/include/sys/_types/_s_ifmt.h \
   /usr/include/sys/_types/_filesec_t.h /usr/include/errno.h \
-  /usr/include/sys/errno.h userpref.h /usr/local/include/plist/plist.h \
-  debug.h utils.h
+  /usr/include/sys/errno.h userpref.h \
+  /usr/local/Cellar/libplist/2.0.0_1/include/plist/plist.h debug.h \
+  utils.h
 
 ../config.h:
 
@@ -370,85 +350,47 @@ userpref.lo: userpref.c ../config.h /usr/include/stdio.h \
 
 /usr/local/Cellar/usbmuxd/HEAD-873252d_1/include/usbmuxd.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/pem.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/e_os2.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/opensslconf.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/bio.h:
-
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stdarg.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/crypto.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/stack.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/safestack.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/opensslv.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/ossl_typ.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/symhacks.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/evp.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/objects.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/obj_mac.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/asn1.h:
-
-/usr/include/time.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/bn.h:
-
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/limits.h:
-
-/usr/include/limits.h:
-
-/usr/include/machine/limits.h:
-
-/usr/include/i386/limits.h:
-
-/usr/include/i386/_limits.h:
-
-/usr/include/sys/syslimits.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/x509.h:
-
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/buffer.h:
+/usr/local/Cellar/gnutls/3.5.19/include/gnutls/gnutls.h:
 
 /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stddef.h:
 
 /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/__stddef_max_align_t.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/ec.h:
+/usr/include/time.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/ecdsa.h:
+/usr/local/Cellar/gnutls/3.5.19/include/gnutls/compat.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/ecdh.h:
+/usr/local/Cellar/gnutls/3.5.19/include/gnutls/crypto.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/rsa.h:
+/usr/local/Cellar/gnutls/3.5.19/include/gnutls/x509.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/dsa.h:
+/usr/local/Cellar/gnutls/3.5.19/include/gnutls/pkcs7.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/dh.h:
+/usr/local/include/gcrypt.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/sha.h:
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stdarg.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/x509_vfy.h:
+/usr/local/include/gpg-error.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/lhash.h:
+/usr/include/sys/socket.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/pkcs7.h:
+/usr/include/machine/_param.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/pem2.h:
+/usr/include/i386/_param.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/x509v3.h:
+/usr/include/net/net_kev.h:
 
-/usr/local/Cellar/openssl/1.0.2q/include/openssl/conf.h:
+/usr/include/sys/_types/_sa_family_t.h:
+
+/usr/include/sys/_types/_socklen_t.h:
+
+/usr/include/sys/_types/_iovec_t.h:
+
+/usr/include/sys/time.h:
+
+/usr/include/sys/_types/_timeval64.h:
+
+/usr/local/Cellar/libtasn1/4.13/include/libtasn1.h:
 
 /usr/include/dirent.h:
 
@@ -468,7 +410,7 @@ userpref.lo: userpref.c ../config.h /usr/include/stdio.h \
 
 userpref.h:
 
-/usr/local/include/plist/plist.h:
+/usr/local/Cellar/libplist/2.0.0_1/include/plist/plist.h:
 
 debug.h:
 

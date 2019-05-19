@@ -55,10 +55,10 @@ utils.lo: utils.c ../config.h \
   /usr/include/stdio.h /usr/include/_stdio.h \
   /usr/include/sys/_types/_va_list.h /usr/include/sys/stdio.h \
   /usr/include/sys/_types/_off_t.h /usr/include/secure/_stdio.h \
-  /usr/local/include/plist/plist.h /usr/include/sys/types.h \
-  /usr/include/sys/_types/_u_char.h /usr/include/sys/_types/_u_short.h \
-  /usr/include/sys/_types/_u_int.h /usr/include/sys/_types/_caddr_t.h \
-  /usr/include/sys/_types/_blkcnt_t.h \
+  /usr/local/Cellar/libplist/2.0.0_1/include/plist/plist.h \
+  /usr/include/sys/types.h /usr/include/sys/_types/_u_char.h \
+  /usr/include/sys/_types/_u_short.h /usr/include/sys/_types/_u_int.h \
+  /usr/include/sys/_types/_caddr_t.h /usr/include/sys/_types/_blkcnt_t.h \
   /usr/include/sys/_types/_blksize_t.h /usr/include/sys/_types/_gid_t.h \
   /usr/include/sys/_types/_in_addr_t.h \
   /usr/include/sys/_types/_in_port_t.h /usr/include/sys/_types/_ino_t.h \
@@ -277,7 +277,7 @@ utils.h:
 
 /usr/include/secure/_stdio.h:
 
-/usr/local/include/plist/plist.h:
+/usr/local/Cellar/libplist/2.0.0_1/include/plist/plist.h:
 
 /usr/include/sys/types.h:
 

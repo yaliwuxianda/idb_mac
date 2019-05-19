@@ -1,6 +1,6 @@
 #! /bin/sh
 # Generated automatically by config.status (libimobiledevice) 1.2.1
-# Libtool was configured on host bogon:
+# Libtool was configured on host lixingdeMacBook-Pro.local:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 
 # Provide generalized library-building support services.

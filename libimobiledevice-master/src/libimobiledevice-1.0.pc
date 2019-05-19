@@ -9,4 +9,4 @@ Version: 1.2.1
 Libs: -L${libdir} -limobiledevice
 Cflags: -I${includedir}
 Requires: libplist >= 1.11
-Requires.private: libusbmuxd >= 1.1.0 openssl >= 0.9.8
+Requires.private: libusbmuxd >= 1.1.0 gnutls >= 2.2.0 libtasn1 >= 1.1
