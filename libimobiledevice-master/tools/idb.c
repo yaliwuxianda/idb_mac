@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+idevice_t device = NULL;
+
 //切割字符串
 void split(char *src, const char *separator, char **dest, int *num)
 {
@@ -40,13 +42,14 @@ void split(char *src, const char *separator, char **dest, int *num)
 void getAFCClient(char *udid, char *appid, afc_client_t *afc_client)
 {
     int *error = malloc(sizeof(int));
-
-    idevice_t device = NULL;
-    idevice_new(&device, udid);
-    if (!device)
+    if (device == NULL)
     {
-        *error = -10;
-        goto l_device;
+        idevice_new(&device, udid);
+        if (!device)
+        {
+            *error = -10;
+            goto l_device;
+        }
     }
 
     lockdownd_client_t lockdownd_client = NULL;
@@ -58,6 +61,7 @@ void getAFCClient(char *udid, char *appid, afc_client_t *afc_client)
         *error = -10;
         goto l_device;
     }
+
     //lockdownd_client_free(lockdownd_client);
 
     house_arrest_error_t err = 0;
@@ -124,18 +128,15 @@ void getAFCClient(char *udid, char *appid, afc_client_t *afc_client)
 
 l_status:
     printf("");
-//    free(status);
+    free(status);
 l_list:
     printf("");
-//    plist_free(dict);
+    plist_free(dict);
 l_house:
     printf("");
-//    house_arrest_client_free(client);
 l_device:
     printf("");
-    //    idevice_free(device);
 }
-
 //获取设备列表
 void getDeviceList(char ***dev_list)
 {
@@ -262,7 +263,6 @@ afc_error_t copyFileToDevice(afc_client_t client, char *sourceFilePath, char *ta
 
     if (error == 0)
     {
-        printf("%s\n", sourceFilePath);
         char *ks[10];
         int num;
         split(sourceFilePath, "/", ks, &num);
@@ -324,7 +324,7 @@ afc_error_t copyFileFromDevice(afc_client_t client, char *sourceFilePath, char *
                 free(bs);
                 while (bytesReaden > 0)
                 {
-                    printf("%d\n",bytesReaden);
+                    printf("%d\n", bytesReaden);
                     bs = malloc(filelen);
                     error = afc_file_read(client, filehandle, bs, filelen, &bytesReaden);
                     if (error == 0)
@@ -566,6 +566,29 @@ int main(int argc, const char *args[])
 
                     if (afc_err == 0)
                         printf("Success\n");
+                    else if (afc_err == 8)
+                    {
+                        //应用已经重新安装了
+                        client = NULL;
+                        getAFCClient(udid, appid, &client);
+                        if (client == NULL)
+                        {
+                            printf("No Devices\n");
+                            break;
+                        }
+                        printf("开始拷贝\n");
+                        sleep(2);
+                        afc_err = copyFileToDevice(client, pdir, tdir);
+                        sleep(2);
+                        afc_err = copyFileToDevice(client, pdir, tdir);
+                        if (afc_err == 0)
+                            printf("Success\n");
+                        else
+                        {
+                            printf("Fail\n");
+                            break;
+                        }
+                    }
                     else
                         printf("Failed %d\n", afc_err);
                 }
