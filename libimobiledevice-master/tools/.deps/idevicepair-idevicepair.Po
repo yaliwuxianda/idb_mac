@@ -54,10 +54,7 @@ idevicepair-idevicepair.o: idevicepair.c ../config.h /usr/include/stdio.h \
   /usr/include/sys/_types/_fd_isset.h /usr/include/sys/_types/_fd_zero.h \
   /usr/include/sys/_types/_fd_copy.h /usr/include/sys/_select.h \
   /usr/include/sys/_types/_uuid_t.h /usr/include/gethostuuid.h \
-  ../common/userpref.h \
-  /usr/local/Cellar/gnutls/3.5.19/include/gnutls/gnutls.h \
-  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stddef.h \
-  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/__stddef_max_align_t.h \
+  ../common/userpref.h /usr/local/include/gnutls/gnutls.h \
   /usr/include/sys/types.h /usr/include/sys/_types/_u_char.h \
   /usr/include/sys/_types/_u_short.h /usr/include/sys/_types/_u_int.h \
   /usr/include/sys/_types/_caddr_t.h /usr/include/sys/_types/_blkcnt_t.h \
@@ -76,8 +73,11 @@ idevicepair-idevicepair.o: idevicepair.c ../config.h /usr/include/stdio.h \
   /usr/include/sys/_pthread/_pthread_t.h \
   /usr/include/sys/_pthread/_pthread_key_t.h \
   /usr/include/sys/_types/_fsblkcnt_t.h \
-  /usr/include/sys/_types/_fsfilcnt_t.h /usr/include/time.h \
-  /usr/local/Cellar/gnutls/3.5.19/include/gnutls/compat.h \
+  /usr/include/sys/_types/_fsfilcnt_t.h \
+  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stddef.h \
+  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/__stddef_max_align_t.h \
+  /usr/include/time.h /usr/include/sys/uio.h \
+  /usr/include/sys/_types/_iovec_t.h /usr/local/include/gnutls/compat.h \
   /usr/local/Cellar/libplist/2.0.0_1/include/plist/plist.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stdarg.h \
   ../include/libimobiledevice/libimobiledevice.h /usr/include/sys/stat.h \
@@ -282,11 +282,7 @@ idevicepair-idevicepair.o: idevicepair.c ../config.h /usr/include/stdio.h \
 
 ../common/userpref.h:
 
-/usr/local/Cellar/gnutls/3.5.19/include/gnutls/gnutls.h:
-
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stddef.h:
-
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/__stddef_max_align_t.h:
+/usr/local/include/gnutls/gnutls.h:
 
 /usr/include/sys/types.h:
 
@@ -338,9 +334,17 @@ idevicepair-idevicepair.o: idevicepair.c ../config.h /usr/include/stdio.h \
 
 /usr/include/sys/_types/_fsfilcnt_t.h:
 
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stddef.h:
+
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/__stddef_max_align_t.h:
+
 /usr/include/time.h:
 
-/usr/local/Cellar/gnutls/3.5.19/include/gnutls/compat.h:
+/usr/include/sys/uio.h:
+
+/usr/include/sys/_types/_iovec_t.h:
+
+/usr/local/include/gnutls/compat.h:
 
 /usr/local/Cellar/libplist/2.0.0_1/include/plist/plist.h:
 

@@ -96,7 +96,7 @@ bin_PROGRAMS = idevice_id$(EXEEXT) ideviceinfo$(EXEEXT) \
 	idevicebackup2$(EXEEXT) ideviceprovision$(EXEEXT) \
 	idevicedebugserverproxy$(EXEEXT) idevicediagnostics$(EXEEXT) \
 	idevicedebug$(EXEEXT) idevicenotificationproxy$(EXEEXT) \
-	idevicecrashreport$(EXEEXT) idb$(EXEEXT)
+	idevicecrashreport$(EXEEXT) idb$(EXEEXT) idbserver$(EXEEXT)
 subdir = tools
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_cython.m4 \
@@ -126,6 +126,12 @@ am__v_lt_1 =
 idb_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(idb_CFLAGS) $(CFLAGS) \
 	$(idb_LDFLAGS) $(LDFLAGS) -o $@
+am_idbserver_OBJECTS = idbserver-idbserver.$(OBJEXT)
+idbserver_OBJECTS = $(am_idbserver_OBJECTS)
+idbserver_DEPENDENCIES = $(top_builddir)/src/libimobiledevice.la
+idbserver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(idbserver_CFLAGS) \
+	$(CFLAGS) $(idbserver_LDFLAGS) $(LDFLAGS) -o $@
 am_idevice_id_OBJECTS = idevice_id-idevice_id.$(OBJEXT)
 idevice_id_OBJECTS = $(am_idevice_id_OBJECTS)
 idevice_id_DEPENDENCIES = $(top_builddir)/src/libimobiledevice.la
@@ -271,6 +277,7 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/idb-idb.Po \
+	./$(DEPDIR)/idbserver-idbserver.Po \
 	./$(DEPDIR)/idevice_id-idevice_id.Po \
 	./$(DEPDIR)/idevicebackup-idevicebackup.Po \
 	./$(DEPDIR)/idevicebackup2-idevicebackup2.Po \
@@ -307,7 +314,7 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(idb_SOURCES) $(idevice_id_SOURCES) \
+SOURCES = $(idb_SOURCES) $(idbserver_SOURCES) $(idevice_id_SOURCES) \
 	$(idevicebackup_SOURCES) $(idevicebackup2_SOURCES) \
 	$(idevicecrashreport_SOURCES) $(idevicedate_SOURCES) \
 	$(idevicedebug_SOURCES) $(idevicedebugserverproxy_SOURCES) \
@@ -316,10 +323,11 @@ SOURCES = $(idb_SOURCES) $(idevice_id_SOURCES) \
 	$(idevicename_SOURCES) $(idevicenotificationproxy_SOURCES) \
 	$(idevicepair_SOURCES) $(ideviceprovision_SOURCES) \
 	$(idevicescreenshot_SOURCES) $(idevicesyslog_SOURCES)
-DIST_SOURCES = $(idb_SOURCES) $(idevice_id_SOURCES) \
-	$(idevicebackup_SOURCES) $(idevicebackup2_SOURCES) \
-	$(idevicecrashreport_SOURCES) $(idevicedate_SOURCES) \
-	$(idevicedebug_SOURCES) $(idevicedebugserverproxy_SOURCES) \
+DIST_SOURCES = $(idb_SOURCES) $(idbserver_SOURCES) \
+	$(idevice_id_SOURCES) $(idevicebackup_SOURCES) \
+	$(idevicebackup2_SOURCES) $(idevicecrashreport_SOURCES) \
+	$(idevicedate_SOURCES) $(idevicedebug_SOURCES) \
+	$(idevicedebugserverproxy_SOURCES) \
 	$(idevicediagnostics_SOURCES) $(ideviceenterrecovery_SOURCES) \
 	$(ideviceimagemounter_SOURCES) $(ideviceinfo_SOURCES) \
 	$(idevicename_SOURCES) $(idevicenotificationproxy_SOURCES) \
@@ -593,6 +601,10 @@ idb_SOURCES = idb.c
 idb_CFLAGS = $(AM_CFLAGS)
 idb_LDFLAGS = $(AM_LDFLAGS)
 idb_LDADD = $(top_builddir)/src/libimobiledevice.la
+idbserver_SOURCES = idbserver.c
+idbserver_CFLAGS = $(AM_CFLAGS)
+idbserver_LDFLAGS = $(AM_LDFLAGS)
+idbserver_LDADD = $(top_builddir)/src/libimobiledevice.la
 all: all-am
 
 .SUFFIXES:
@@ -680,6 +692,10 @@ idb$(EXEEXT): $(idb_OBJECTS) $(idb_DEPENDENCIES) $(EXTRA_idb_DEPENDENCIES)
 	@rm -f idb$(EXEEXT)
 	$(AM_V_CCLD)$(idb_LINK) $(idb_OBJECTS) $(idb_LDADD) $(LIBS)
 
+idbserver$(EXEEXT): $(idbserver_OBJECTS) $(idbserver_DEPENDENCIES) $(EXTRA_idbserver_DEPENDENCIES) 
+	@rm -f idbserver$(EXEEXT)
+	$(AM_V_CCLD)$(idbserver_LINK) $(idbserver_OBJECTS) $(idbserver_LDADD) $(LIBS)
+
 idevice_id$(EXEEXT): $(idevice_id_OBJECTS) $(idevice_id_DEPENDENCIES) $(EXTRA_idevice_id_DEPENDENCIES) 
 	@rm -f idevice_id$(EXEEXT)
 	$(AM_V_CCLD)$(idevice_id_LINK) $(idevice_id_OBJECTS) $(idevice_id_LDADD) $(LIBS)
@@ -755,6 +771,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/idb-idb.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/idbserver-idbserver.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/idevice_id-idevice_id.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/idevicebackup-idevicebackup.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/idevicebackup2-idevicebackup2.Po@am__quote@ # am--include-marker
@@ -813,6 +830,20 @@ idb-idb.obj: idb.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='idb.c' object='idb-idb.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(idb_CFLAGS) $(CFLAGS) -c -o idb-idb.obj `if test -f 'idb.c'; then $(CYGPATH_W) 'idb.c'; else $(CYGPATH_W) '$(srcdir)/idb.c'; fi`
+
+idbserver-idbserver.o: idbserver.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(idbserver_CFLAGS) $(CFLAGS) -MT idbserver-idbserver.o -MD -MP -MF $(DEPDIR)/idbserver-idbserver.Tpo -c -o idbserver-idbserver.o `test -f 'idbserver.c' || echo '$(srcdir)/'`idbserver.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/idbserver-idbserver.Tpo $(DEPDIR)/idbserver-idbserver.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='idbserver.c' object='idbserver-idbserver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(idbserver_CFLAGS) $(CFLAGS) -c -o idbserver-idbserver.o `test -f 'idbserver.c' || echo '$(srcdir)/'`idbserver.c
+
+idbserver-idbserver.obj: idbserver.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(idbserver_CFLAGS) $(CFLAGS) -MT idbserver-idbserver.obj -MD -MP -MF $(DEPDIR)/idbserver-idbserver.Tpo -c -o idbserver-idbserver.obj `if test -f 'idbserver.c'; then $(CYGPATH_W) 'idbserver.c'; else $(CYGPATH_W) '$(srcdir)/idbserver.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/idbserver-idbserver.Tpo $(DEPDIR)/idbserver-idbserver.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='idbserver.c' object='idbserver-idbserver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(idbserver_CFLAGS) $(CFLAGS) -c -o idbserver-idbserver.obj `if test -f 'idbserver.c'; then $(CYGPATH_W) 'idbserver.c'; else $(CYGPATH_W) '$(srcdir)/idbserver.c'; fi`
 
 idevice_id-idevice_id.o: idevice_id.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(idevice_id_CFLAGS) $(CFLAGS) -MT idevice_id-idevice_id.o -MD -MP -MF $(DEPDIR)/idevice_id-idevice_id.Tpo -c -o idevice_id-idevice_id.o `test -f 'idevice_id.c' || echo '$(srcdir)/'`idevice_id.c
@@ -1186,6 +1217,7 @@ clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/idb-idb.Po
+	-rm -f ./$(DEPDIR)/idbserver-idbserver.Po
 	-rm -f ./$(DEPDIR)/idevice_id-idevice_id.Po
 	-rm -f ./$(DEPDIR)/idevicebackup-idevicebackup.Po
 	-rm -f ./$(DEPDIR)/idevicebackup2-idevicebackup2.Po
@@ -1249,6 +1281,7 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/idb-idb.Po
+	-rm -f ./$(DEPDIR)/idbserver-idbserver.Po
 	-rm -f ./$(DEPDIR)/idevice_id-idevice_id.Po
 	-rm -f ./$(DEPDIR)/idevicebackup-idevicebackup.Po
 	-rm -f ./$(DEPDIR)/idevicebackup2-idevicebackup2.Po

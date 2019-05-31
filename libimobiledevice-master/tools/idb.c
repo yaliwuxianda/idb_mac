@@ -15,6 +15,14 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 idevice_t device = NULL;
 
 //切割字符串
@@ -352,6 +360,26 @@ int getFileSize(char *filename)
     int size = statbuf.st_size;
     return size;
 }
+void sendMsg(char *char_send)
+{
+    int sockfd, numbytes;
+    char buf[BUFSIZ];
+    struct sockaddr_in their_addr;
+    while ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+        ;
+    their_addr.sin_family = AF_INET;
+    their_addr.sin_port = 8080;
+    their_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    bzero(&(their_addr.sin_zero), 8);
+
+    while (connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1)
+        ;
+    numbytes = send(sockfd, char_send, strlen(char_send), 0);
+    numbytes = recv(sockfd, buf, BUFSIZ, 0);
+    buf[numbytes] = '\0';
+    printf("%s\n",buf);
+    close(sockfd);
+}
 int main(int argc, const char *args[])
 {
     if (argc > 1)
@@ -423,6 +451,45 @@ int main(int argc, const char *args[])
                     }
                 }
             }
+        }
+        else if (strcmp(command, "connect") == 0)
+        {
+            char *udid = NULL;
+            char *appid = NULL;
+            for (int i = 2; i < argc; i++)
+            {
+                char *arg = (char *)args[i];
+                if (strcmp(arg, "-u") == 0)
+                {
+                    i++;
+                    udid = (char *)args[i];
+                }
+                else if (strcmp(arg, "-appid") == 0)
+                {
+                    i++;
+                    appid = (char *)args[i];
+                }
+            }
+            char *cmd = malloc((strlen(udid) + strlen(appid) + 2 + strlen(command)) * sizeof(char *));
+            sprintf(cmd, "%s -appid %s -u %s", command, appid, udid);
+
+            printf("send  %s\n", cmd);
+
+            sendMsg(cmd);
+            free(cmd);
+        }
+        else if (strcmp(command, "push") == 0 ||
+                 strcmp(command, "pull") == 0)
+        {
+            char *c1 = args[2];
+            char *c2 = args[3];
+            char *cmd = malloc((strlen(c1) + strlen(c2) + 2 + strlen(command)) * sizeof(char *));
+            sprintf(cmd, "%s %s %s", command, c1, c2);
+
+            printf("send  %s\n", cmd);
+
+            sendMsg(cmd);
+            free(cmd);
         }
         else if (strcmp(command, "shell") == 0)
         {
@@ -577,9 +644,6 @@ int main(int argc, const char *args[])
                             break;
                         }
                         printf("开始拷贝\n");
-                        sleep(2);
-                        afc_err = copyFileToDevice(client, pdir, tdir);
-                        sleep(2);
                         afc_err = copyFileToDevice(client, pdir, tdir);
                         if (afc_err == 0)
                             printf("Success\n");

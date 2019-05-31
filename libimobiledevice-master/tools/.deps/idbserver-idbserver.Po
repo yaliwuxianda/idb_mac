@@ -1,6 +1,6 @@
-idb-idb.o: idb.c /usr/include/pthread.h /usr/include/_types.h \
-  /usr/include/sys/_types.h /usr/include/sys/cdefs.h \
-  /usr/include/sys/_symbol_aliasing.h \
+idbserver-idbserver.o: idbserver.c /usr/include/pthread.h \
+  /usr/include/_types.h /usr/include/sys/_types.h \
+  /usr/include/sys/cdefs.h /usr/include/sys/_symbol_aliasing.h \
   /usr/include/sys/_posix_availability.h /usr/include/machine/_types.h \
   /usr/include/i386/_types.h /usr/include/sys/_pthread/_pthread_types.h \
   /usr/include/pthread/pthread_impl.h /usr/include/pthread/sched.h \
@@ -85,6 +85,7 @@ idb-idb.o: idb.c /usr/include/pthread.h /usr/include/_types.h \
   /usr/include/sys/_types/_socklen_t.h \
   /usr/include/sys/_types/_iovec_t.h /usr/include/netinet/in.h \
   /usr/include/netinet6/in6.h /usr/include/arpa/inet.h \
+  /usr/include/netdb.h /usr/include/errno.h /usr/include/sys/errno.h \
   /usr/include/unistd.h /usr/include/sys/unistd.h \
   /usr/include/sys/_types/_posix_vdisable.h \
   /usr/include/sys/_types/_seek_set.h /usr/include/sys/select.h \
@@ -370,6 +371,12 @@ idb-idb.o: idb.c /usr/include/pthread.h /usr/include/_types.h \
 /usr/include/netinet6/in6.h:
 
 /usr/include/arpa/inet.h:
+
+/usr/include/netdb.h:
+
+/usr/include/errno.h:
+
+/usr/include/sys/errno.h:
 
 /usr/include/unistd.h:
 
