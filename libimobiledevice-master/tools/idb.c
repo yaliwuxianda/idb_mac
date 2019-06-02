@@ -371,9 +371,10 @@ void sendMsg(char *char_send)
     their_addr.sin_port = 8080;
     their_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     bzero(&(their_addr.sin_zero), 8);
-
+printf("111111\n");
     while (connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1)
         ;
+        printf("222222\n");
     numbytes = send(sockfd, char_send, strlen(char_send), 0);
     numbytes = recv(sockfd, buf, BUFSIZ, 0);
     buf[numbytes] = '\0';

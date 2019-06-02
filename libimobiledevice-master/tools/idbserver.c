@@ -20,6 +20,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <signal.h>
+#include <stdlib.h>
+
 idevice_t device = NULL;
 afc_client_t afcclient = NULL;
 char *appid = NULL;
@@ -406,6 +409,9 @@ char *execCommand(char *cmd)
 
             afc_error_t afc_err = copyFileToDevice(afcclient, pdir, tdir);
 
+
+printf("%d\n---",afc_err);
+
             if (afc_err == 0)
                 return "Success\n";
             else if (afc_err == 8)
@@ -445,6 +451,17 @@ char *readCommandFromFile()
     fclose(file);
 
     remove("cmd.txt");
+}
+//异常退出
+void signal_crash_handler(int sig)
+{
+    //server_backtrace(sig);    
+    exit(-1);
+}
+ //正常退出
+void signal_exit_handler(int sig)
+{
+    exit(0);
 }
 /************************************************************************************************************************
 1、int socket(int family,int type,int protocol)
@@ -503,6 +520,18 @@ len:
 *************************************************************************************************************************/
 int main(int argc, char *argv[])
 {
+    atexit(signal_exit_handler);
+    signal(SIGTERM, signal_exit_handler);
+    signal(SIGINT, signal_exit_handler);
+
+    // ignore SIGPIPE
+    signal(SIGPIPE, SIG_IGN);
+
+    signal(SIGBUS, signal_crash_handler);  // 总线错误
+    signal(SIGSEGV, signal_crash_handler); // SIGSEGV，非法内存访问
+    signal(SIGFPE, signal_crash_handler);  // SIGFPE，数学相关的异常，如被0除，浮点溢出，等等
+    signal(SIGABRT, signal_crash_handler); // SIGABRT，由调用abort函数产生，进程非正常退出
+
     int fd, new_fd, struct_len, numbytes, i;
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
@@ -523,7 +552,6 @@ int main(int argc, char *argv[])
     int exit = 0;
     while (1)
     {
-
         new_fd = accept(fd, (struct sockaddr *)&client_addr, &struct_len);
         while ((numbytes = recv(new_fd, buff, BUFSIZ, 0)) > 0)
         {
@@ -542,17 +570,17 @@ int main(int argc, char *argv[])
                 return 1;
             }
         }
-        if (exit == 0)
+        if (exit == 1)
         {
             break;
         }
     }
     close(new_fd);
     close(fd);
-    if (exit == 1)
+    if (exit != 0)
     {
-        system("idbserver");
+        system("./idbserver");
+        return exit;
     }
-
     return 0;
 }
