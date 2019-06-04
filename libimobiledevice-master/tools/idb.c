@@ -365,20 +365,25 @@ void sendMsg(char *char_send)
     int sockfd, numbytes;
     char buf[BUFSIZ];
     struct sockaddr_in their_addr;
-    while ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-        ;
     their_addr.sin_family = AF_INET;
     their_addr.sin_port = 8080;
     their_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     bzero(&(their_addr.sin_zero), 8);
-printf("111111\n");
-    while (connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1)
-        ;
-        printf("222222\n");
+    int rel = -1;
+    while (rel == -1)
+    {
+        rel = (sockfd = socket(AF_INET, SOCK_STREAM, 0));
+        if (rel != -1)
+            rel = connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr));
+        if (rel == -1)
+            sleep(1);
+        printf("connecting...\n");
+    }
+
     numbytes = send(sockfd, char_send, strlen(char_send), 0);
     numbytes = recv(sockfd, buf, BUFSIZ, 0);
     buf[numbytes] = '\0';
-    printf("%s\n",buf);
+    printf("%s\n", buf);
     close(sockfd);
 }
 int main(int argc, const char *args[])
@@ -474,8 +479,6 @@ int main(int argc, const char *args[])
             char *cmd = malloc((strlen(udid) + strlen(appid) + 2 + strlen(command)) * sizeof(char *));
             sprintf(cmd, "%s -appid %s -u %s", command, appid, udid);
 
-            printf("send  %s\n", cmd);
-
             sendMsg(cmd);
             free(cmd);
         }
@@ -486,9 +489,14 @@ int main(int argc, const char *args[])
             char *c2 = args[3];
             char *cmd = malloc((strlen(c1) + strlen(c2) + 2 + strlen(command)) * sizeof(char *));
             sprintf(cmd, "%s %s %s", command, c1, c2);
-
-            printf("send  %s\n", cmd);
-
+            sendMsg(cmd);
+            free(cmd);
+        }
+        else if (strcmp(command, "mkdir") == 0)
+        {
+            char *c1 = args[2];
+            char *cmd = malloc((strlen(c1) + 1 + strlen(command)) * sizeof(char *));
+            sprintf(cmd, "%s %s", command, c1);
             sendMsg(cmd);
             free(cmd);
         }

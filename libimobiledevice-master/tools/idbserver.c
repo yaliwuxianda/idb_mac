@@ -25,8 +25,33 @@
 
 idevice_t device = NULL;
 afc_client_t afcclient = NULL;
+//公用的appid
 char *appid = NULL;
+//公用的udid
 char *udid = NULL;
+
+char *logfilepath = NULL;
+
+char *get_exe_path(char *buf, int count)
+{
+    int i;
+    int rslt = readlink("/proc/self/cwd", buf, count - 1);
+    if (rslt < 0 || (rslt >= count - 1))
+    {
+        return NULL;
+    }
+    buf[rslt] = '\0';
+    for (i = rslt; i >= 0; i--)
+    {
+        printf("buf[%d] %c\n", i, buf[i]);
+        if (buf[i] == '/')
+        {
+            buf[i + 1] = '\0';
+            break;
+        }
+    }
+    return buf;
+}
 //切割字符串
 void split(char *src, const char *separator, char **dest, int *num)
 {
@@ -48,6 +73,46 @@ void split(char *src, const char *separator, char **dest, int *num)
         pNext = strtok(NULL, separator);
     }
     *num = count;
+}
+
+void saveCommandToFile(char *cmd2)
+{
+    int len = (strlen(cmd2) + strlen(udid) + strlen(appid) + 3) * sizeof(char *);
+    char *tempstr = malloc(len);
+    sprintf(tempstr, "%s\n%s\n%s", appid, udid, cmd2);
+
+    FILE *file = fopen(logfilepath, "w");
+    fprintf(file, tempstr);
+    fclose(file);
+    file = NULL;
+    free(tempstr);
+}
+int readCommandFromFile(char *cmd)
+{
+    FILE *file = fopen(logfilepath, "r");
+    if (file == NULL)
+        return -1;
+    char *cmdstr = malloc(sizeof(char *) * 1024);
+    fread(cmdstr, sizeof(char *) * 1024, 1, file);
+    fclose(file);
+    // remove(logfilepath);
+    char *tempstrs[10];
+    int num = 0;
+    split(cmdstr, "\n", tempstrs, &num);
+
+    strcpy(appid, tempstrs[0]);
+    strcpy(udid, tempstrs[1]);
+    if (strcmp(tempstrs[2], "-1") != 0)
+    {
+        strcpy(cmd, tempstrs[2]);
+    }
+    else
+    {
+        cmd[0]='\0';
+    }
+    
+    free(cmdstr);
+    return 0;
 }
 void getAFCClient(char *udid, char *appid, afc_client_t *afc_client)
 {
@@ -325,7 +390,6 @@ afc_error_t copyFileFromDevice(afc_client_t client, char *sourceFilePath, char *
 
         if (error == 0)
         {
-            printf("%s\n", targetDir);
             //开始写入到输出文件
             FILE *outfile = fopen(targetDir, "w+");
             if (outfile)
@@ -334,7 +398,6 @@ afc_error_t copyFileFromDevice(afc_client_t client, char *sourceFilePath, char *
                 free(bs);
                 while (bytesReaden > 0)
                 {
-                    printf("%d\n", bytesReaden);
                     bs = malloc(filelen);
                     error = afc_file_read(client, filehandle, bs, filelen, &bytesReaden);
                     if (error == 0)
@@ -364,29 +427,36 @@ int getFileSize(char *filename)
 }
 char *execCommand(char *cmd)
 {
+    char *result = NULL;
+
     char *ks[10];
     int num = 0;
-    split(cmd, " ", ks, &num);
+
+    char *cmdcopy = (char *)malloc(strlen(cmd) * sizeof(cmd));
+    strcpy(cmdcopy, cmd);
+    split(cmdcopy, " ", ks, &num);
+
     if (num > 0)
     {
         char *command = ks[0];
         if (strcmp(command, "connect") == 0)
         {
-            appid = ks[2];
-            udid = ks[4];
+            strcpy(appid, ks[2]);
+            strcpy(udid, ks[4]);
 
-            printf("%s----%s\n", appid, udid);
+            saveCommandToFile("-1");
+
             if (udid != NULL && appid != NULL)
             {
                 getAFCClient(udid, appid, &afcclient);
             }
             if (afcclient == NULL)
             {
-                return "No Devices\n";
+                result = "No Devices\n";
             }
             else
             {
-                return "connect success\n";
+                result = "connect success\n";
             }
         }
         else if (strcmp(command, "mkdir") == 0)
@@ -398,9 +468,9 @@ char *execCommand(char *cmd)
             strncpy(tempstr, todir, 1);
             afc_error_t afc_err = afc_make_directory(afcclient, todir);
             if (afc_err == 0)
-                return "Success\n";
+                result = "Success\n";
             else
-                return "Fail";
+                result = "reboot";
         }
         else if (strcmp(command, "push") == 0)
         {
@@ -409,18 +479,15 @@ char *execCommand(char *cmd)
 
             afc_error_t afc_err = copyFileToDevice(afcclient, pdir, tdir);
 
-
-printf("%d\n---",afc_err);
-
             if (afc_err == 0)
-                return "Success\n";
+                result = "Success\n";
             else if (afc_err == 8)
             {
                 //应用已经重新安装了
-                return "reboot";
+                result = "reboot";
             }
             else
-                return "Fail\n";
+                result = "reboot";
         }
         else if (strcmp(command, "pull") == 0)
         {
@@ -430,37 +497,27 @@ printf("%d\n---",afc_err);
             afc_error_t afc_err = copyFileFromDevice(afcclient, pdir, tdir);
 
             if (afc_err == 0)
-                return "Success\n";
+                result = "Success\n";
             else
-                return "Failed\n";
+                result = "Failed\n";
         }
     }
-    return "Failed\n";
+    if (result == NULL)
+        result = "Failed\n";
+    free(cmdcopy);
+    return result;
 }
-void saveCommandToFile(char *cmd)
-{
-    FILE *file = fopen("cmd.txt", "w");
-    fwrite(cmd, strlen(cmd) * sizeof(char *), 1, file);
-    fclose(file);
-}
-char *readCommandFromFile()
-{
-    char *cmd = malloc(sizeof(char *) * 1024);
-    FILE *file = fopen("cmd.txt", "r");
-    fread(cmd, strlen(cmd) + 1, 1, file);
-    fclose(file);
 
-    remove("cmd.txt");
-}
 //异常退出
 void signal_crash_handler(int sig)
 {
-    //server_backtrace(sig);    
+    printf("%d\n", sig);
     exit(-1);
 }
- //正常退出
+//正常退出
 void signal_exit_handler(int sig)
 {
+    printf("%d\n", sig);
     exit(0);
 }
 /************************************************************************************************************************
@@ -518,15 +575,47 @@ buf:
 len:
     数据的长度，把flags设置为0
 *************************************************************************************************************************/
+
 int main(int argc, char *argv[])
 {
+    //启动目录
+    int len = strlen(argv[0]) - 15;
+    char *tempstr = malloc(len * sizeof(char *));
+    strncpy(tempstr, argv[0], len);
+
+    logfilepath = malloc((len + 7) * sizeof(char *));
+    sprintf(logfilepath, "%scmd.txt", tempstr);
+    free(tempstr);
+
+    //初始化appid uuid
+    appid = malloc(sizeof(char *) + 200);
+    udid = malloc(sizeof(char *) + 200);
+
+    /*读取上一次异常失败的记录，并继续执行*/
+    char *precmd = malloc(sizeof(char *) * 1024);
+    int issuccess = readCommandFromFile(precmd);
+    if (issuccess == 0)
+    {
+        char *result = NULL;
+        //connect
+        getAFCClient(udid, appid, &afcclient);
+        if (afcclient == NULL)
+            result = "No Devices\n";
+        else
+        {
+            if (precmd!=NULL&&strlen(precmd)>0)
+            {
+                result = execCommand(precmd);
+            }
+        }
+    }
+    free(precmd);
+
+    //初始化异常回调函数
     atexit(signal_exit_handler);
     signal(SIGTERM, signal_exit_handler);
     signal(SIGINT, signal_exit_handler);
-
-    // ignore SIGPIPE
     signal(SIGPIPE, SIG_IGN);
-
     signal(SIGBUS, signal_crash_handler);  // 总线错误
     signal(SIGSEGV, signal_crash_handler); // SIGSEGV，非法内存访问
     signal(SIGFPE, signal_crash_handler);  // SIGFPE，数学相关的异常，如被0除，浮点溢出，等等
@@ -553,34 +642,33 @@ int main(int argc, char *argv[])
     while (1)
     {
         new_fd = accept(fd, (struct sockaddr *)&client_addr, &struct_len);
-        while ((numbytes = recv(new_fd, buff, BUFSIZ, 0)) > 0)
+        if(numbytes = recv(new_fd, buff, BUFSIZ, 0) > 0)
         {
-            buff[numbytes] = '\0';
-            printf("command：%s\n", buff);
+            /*开始执行新纪录*/
             char *result = execCommand(buff);
             if (strcmp(result, "reboot") == 0)
             {
                 saveCommandToFile(buff);
                 exit = 1;
-                break;
             }
+            memset(buff, 0, BUFSIZ);
             if (send(new_fd, result, strlen(result) * sizeof(result), 0) < 0)
             {
-                perror("write");
-                return 1;
+                //发送成功
+            }
+            else
+            {
+                //发送失败
             }
         }
+        close(new_fd);
         if (exit == 1)
         {
             break;
         }
     }
-    close(new_fd);
     close(fd);
     if (exit != 0)
-    {
-        system("./idbserver");
         return exit;
-    }
     return 0;
 }
