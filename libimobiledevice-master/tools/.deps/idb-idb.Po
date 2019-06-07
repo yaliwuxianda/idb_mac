@@ -65,7 +65,9 @@ idb-idb.o: idb.c /usr/include/pthread.h /usr/include/_types.h \
   /usr/local/Cellar/libplist/2.0.0_1/include/plist/plist.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/include/stdarg.h \
   ../include/libimobiledevice/lockdown.h \
-  ../include/libimobiledevice/afc.h /usr/include/stdlib.h \
+  ../include/libimobiledevice/afc.h \
+  ../include/libimobiledevice/installation_proxy.h \
+  ../include/libimobiledevice/notification_proxy.h /usr/include/stdlib.h \
   /usr/include/sys/wait.h /usr/include/sys/signal.h \
   /usr/include/machine/signal.h /usr/include/i386/signal.h \
   /usr/include/machine/_mcontext.h /usr/include/i386/_mcontext.h \
@@ -296,6 +298,10 @@ idb-idb.o: idb.c /usr/include/pthread.h /usr/include/_types.h \
 ../include/libimobiledevice/lockdown.h:
 
 ../include/libimobiledevice/afc.h:
+
+../include/libimobiledevice/installation_proxy.h:
+
+../include/libimobiledevice/notification_proxy.h:
 
 /usr/include/stdlib.h:
 

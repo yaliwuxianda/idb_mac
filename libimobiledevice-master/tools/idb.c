@@ -10,6 +10,9 @@
 #include <libimobiledevice/afc.h>
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/libimobiledevice.h>
+
+#include <libimobiledevice/installation_proxy.h>
+#include <libimobiledevice/notification_proxy.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -24,7 +27,7 @@
 #include <stdlib.h>
 
 idevice_t device = NULL;
-
+char *curudid = NULL;
 //切割字符串
 void split(char *src, const char *separator, char **dest, int *num)
 {
@@ -47,6 +50,326 @@ void split(char *src, const char *separator, char **dest, int *num)
     }
     *num = count;
 }
+int command_completed = 0;
+char *last_status = NULL;
+int err_occurred = 0;
+int notified = 0;
+char *options = NULL;
+int notification_expected = 0;
+int wait_for_command_complete = 0;
+int is_device_connected = 0;
+static void print_apps(plist_t apps)
+{
+    uint32_t i = 0;
+    for (i = 0; i < plist_array_get_size(apps); i++)
+    {
+        plist_t app = plist_array_get_item(apps, i);
+        plist_t p_bundle_identifier = plist_dict_get_item(app, "CFBundleIdentifier");
+        char *s_bundle_identifier = NULL;
+        char *s_display_name = NULL;
+        char *s_version = NULL;
+        plist_t display_name = plist_dict_get_item(app, "CFBundleDisplayName");
+        plist_t version = plist_dict_get_item(app, "CFBundleVersion");
+
+        if (p_bundle_identifier)
+        {
+            plist_get_string_val(p_bundle_identifier, &s_bundle_identifier);
+        }
+        if (!s_bundle_identifier)
+        {
+            fprintf(stderr, "ERROR: Failed to get APPID!\n");
+            break;
+        }
+
+        if (version)
+        {
+            plist_get_string_val(version, &s_version);
+        }
+        if (display_name)
+        {
+            plist_get_string_val(display_name, &s_display_name);
+        }
+        if (!s_display_name)
+        {
+            s_display_name = strdup(s_bundle_identifier);
+        }
+
+        /* output app details */
+        printf("%s", s_bundle_identifier);
+        if (s_version)
+        {
+            printf(", \"%s\"", s_version);
+            free(s_version);
+        }
+        printf(", \"%s\"", s_display_name);
+
+        printf("\n");
+        free(s_display_name);
+        free(s_bundle_identifier);
+    }
+}
+static void status_cb(plist_t command, plist_t status, void *unused)
+{
+    if (command && status)
+    {
+        char *command_name = NULL;
+        instproxy_command_get_name(command, &command_name);
+
+        /* get status */
+        char *status_name = NULL;
+        instproxy_status_get_name(status, &status_name);
+
+        if (status_name)
+        {
+            if (!strcmp(status_name, "Complete"))
+            {
+                command_completed = 1;
+            }
+        }
+
+        /* get error if any */
+        char *error_name = NULL;
+        char *error_description = NULL;
+        uint64_t error_code = 0;
+        instproxy_status_get_error(status, &error_name, &error_description, &error_code);
+
+        /* output/handling */
+        if (!error_name)
+        {
+            if (!strcmp(command_name, "Browse"))
+            {
+                uint64_t total = 0;
+                uint64_t current_index = 0;
+                uint64_t current_amount = 0;
+                plist_t current_list = NULL;
+                instproxy_status_get_current_list(status, &total, &current_index, &current_amount, &current_list);
+                if (current_list)
+                {
+                    print_apps(current_list);
+                    plist_free(current_list);
+                }
+            }
+            else if (status_name)
+            {
+                /* get progress if any */
+                int percent = -1;
+                instproxy_status_get_percent_complete(status, &percent);
+
+                if (last_status && (strcmp(last_status, status_name)))
+                {
+                    printf("\n");
+                }
+
+                if (percent >= 0)
+                {
+                    printf("\r%s: %s (%d%%)", command_name, status_name, percent);
+                }
+                else
+                {
+                    printf("\r%s: %s", command_name, status_name);
+                }
+                if (command_completed)
+                {
+                    printf("\n");
+                }
+            }
+        }
+        else
+        {
+            /* report error to the user */
+            if (error_description)
+                fprintf(stderr, "ERROR: %s failed. Got error \"%s\" with code : %s\n", command_name, error_name, error_description ? error_description : "N/A");
+            else
+                fprintf(stderr, "ERROR: %s failed. Got error \"%s\".\n", command_name, error_name);
+            err_occurred = 1;
+        }
+
+        /* clean up */
+        free(error_name);
+        free(error_description);
+
+        free(last_status);
+        last_status = status_name;
+
+        free(command_name);
+        command_name = NULL;
+    }
+    else
+    {
+        fprintf(stderr, "ERROR: %s was called with invalid arguments!\n", __func__);
+    }
+}
+static void notifier(const char *notification, void *unused)
+{
+    notified = 1;
+}
+static void idevice_event_callback(const idevice_event_t *event, void *userdata)
+{
+    if (event->event == IDEVICE_DEVICE_REMOVE)
+    {
+        if (!strcmp(curudid, event->udid))
+        {
+            fprintf(stderr, "ideviceinstaller: Device removed\n");
+            is_device_connected = 0;
+        }
+    }
+}
+static void idevice_wait_for_command_to_complete()
+{
+    struct timespec ts;
+    ts.tv_sec = 0;
+    ts.tv_nsec = 50000000;
+    is_device_connected = 1;
+
+    /* subscribe to make sure to exit on device removal */
+    idevice_event_subscribe(idevice_event_callback, NULL);
+
+    /* wait for command to complete */
+    while (wait_for_command_complete && !command_completed && !err_occurred && !notified && is_device_connected)
+    {
+        nanosleep(&ts, NULL);
+    }
+
+    /* wait some time if a notification is expected */
+    while (notification_expected && !notified && !err_occurred && is_device_connected)
+    {
+        nanosleep(&ts, NULL);
+    }
+
+    idevice_event_unsubscribe();
+}
+void getAppList(char *udid)
+{
+    curudid = udid;
+    lockdownd_client_t client = NULL;
+    instproxy_client_t ipc = NULL;
+    instproxy_error_t err;
+    np_client_t np = NULL;
+    lockdownd_service_descriptor_t service = NULL;
+    int res = 0;
+    char *bundleidentifier = NULL;
+
+    if (device == NULL)
+    {
+        idevice_new(&device, udid);
+        if (!device)
+        {
+            goto leave_cleanup;
+        }
+    }
+    if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(device, &client, "ideviceinstaller"))
+    {
+        fprintf(stderr, "Could not connect to lockdownd. Exiting.\n");
+        res = -1;
+        goto leave_cleanup;
+    }
+
+    if ((lockdownd_start_service(client, "com.apple.mobile.notification_proxy",
+                                 &service) != LOCKDOWN_E_SUCCESS) ||
+        !service)
+    {
+        fprintf(stderr,
+                "Could not start com.apple.mobile.notification_proxy!\n");
+        res = -1;
+        goto leave_cleanup;
+    }
+
+    np_error_t nperr = np_client_new(device, service, &np);
+
+    if (service)
+    {
+        lockdownd_service_descriptor_free(service);
+    }
+    service = NULL;
+
+    if (nperr != NP_E_SUCCESS)
+    {
+        fprintf(stderr, "Could not connect to notification_proxy!\n");
+        res = -1;
+        goto leave_cleanup;
+    }
+
+    np_set_notify_callback(np, notifier, NULL);
+
+    const char *noties[3] = {NP_APP_INSTALLED, NP_APP_UNINSTALLED, NULL};
+
+    np_observe_notifications(np, noties);
+
+    if (service)
+    {
+        lockdownd_service_descriptor_free(service);
+    }
+    service = NULL;
+
+    if ((lockdownd_start_service(client, "com.apple.mobile.installation_proxy",
+                                 &service) != LOCKDOWN_E_SUCCESS) ||
+        !service)
+    {
+        fprintf(stderr,
+                "Could not start com.apple.mobile.installation_proxy!\n");
+        res = -1;
+        goto leave_cleanup;
+    }
+
+    err = instproxy_client_new(device, service, &ipc);
+
+    if (service)
+    {
+        lockdownd_service_descriptor_free(service);
+    }
+    service = NULL;
+
+    if (err != INSTPROXY_E_SUCCESS)
+    {
+        fprintf(stderr, "Could not connect to installation_proxy!\n");
+        res = -1;
+        goto leave_cleanup;
+    }
+
+    setbuf(stdout, NULL);
+
+    free(last_status);
+    last_status = NULL;
+
+    notification_expected = 0;
+
+    int xml_mode = 0;
+    plist_t client_opts = instproxy_client_options_new();
+    instproxy_client_options_add(client_opts, "ApplicationType", "User", NULL);
+    plist_t apps = NULL;
+
+    if (!xml_mode)
+    {
+        instproxy_client_options_set_return_attributes(client_opts,
+                                                       "CFBundleIdentifier",
+                                                       "CFBundleDisplayName",
+                                                       "CFBundleVersion",
+                                                       NULL);
+    }
+    err = instproxy_browse_with_callback(ipc, client_opts, status_cb, NULL);
+    if (err == INSTPROXY_E_RECEIVE_TIMEOUT)
+    {
+        fprintf(stderr, "NOTE: timeout waiting for device to browse apps, trying again...\n");
+    }
+    instproxy_client_options_free(client_opts);
+    if (err != INSTPROXY_E_SUCCESS)
+    {
+        fprintf(stderr, "ERROR: instproxy_browse returned %d\n", err);
+        res = -1;
+        goto leave_cleanup;
+    }
+    wait_for_command_complete = 1;
+    notification_expected = 0;
+    lockdownd_client_free(client);
+    client = NULL;
+    idevice_wait_for_command_to_complete();
+
+leave_cleanup:
+    np_client_free(np);
+    instproxy_client_free(ipc);
+    lockdownd_client_free(client);
+    idevice_free(device);
+}
 void getAFCClient(char *udid, char *appid, afc_client_t *afc_client)
 {
     int *error = malloc(sizeof(int));
@@ -62,15 +385,13 @@ void getAFCClient(char *udid, char *appid, afc_client_t *afc_client)
 
     lockdownd_client_t lockdownd_client = NULL;
     lockdownd_error_t lockdownd_err = LOCKDOWN_E_UNKNOWN_ERROR;
-
     lockdownd_err = lockdownd_client_new_with_handshake(device, &lockdownd_client, "handshake");
     if (lockdownd_err != LOCKDOWN_E_SUCCESS)
     {
         *error = -10;
         goto l_device;
     }
-
-    //lockdownd_client_free(lockdownd_client);
+    lockdownd_client_free(lockdownd_client);
 
     house_arrest_error_t err = 0;
     house_arrest_client_t client = NULL;
@@ -371,14 +692,12 @@ void sendMsg(char *char_send)
     their_addr.sin_port = 8080;
     their_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     bzero(&(their_addr.sin_zero), 8);
-printf("111111\n");
     while (connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1)
         ;
-        printf("222222\n");
     numbytes = send(sockfd, char_send, strlen(char_send), 0);
     numbytes = recv(sockfd, buf, BUFSIZ, 0);
     buf[numbytes] = '\0';
-    printf("%s\n",buf);
+    printf("%s\n", buf);
     close(sockfd);
 }
 int main(int argc, const char *args[])
@@ -491,6 +810,38 @@ int main(int argc, const char *args[])
 
             sendMsg(cmd);
             free(cmd);
+        }
+        else if (strcmp(command, "-l") == 0)
+        {
+            char *udid = NULL;
+            for (int i = 2; i < argc; i++)
+            {
+                char *arg = (char *)args[i];
+                if (strcmp(arg, "-u") == 0)
+                {
+                    i++;
+                    udid = (char *)args[i];
+                }
+            }
+            if (udid == NULL)
+            {
+                char **dev_list = NULL;
+                getDeviceList(&dev_list);
+
+                int res = 0;
+                for (int i = 0; dev_list[i] != NULL; i++)
+                {
+                    if (i == 0)
+                    {
+                        udid = malloc(sizeof(char *) * strlen(dev_list[i]));
+                        strcpy(udid, dev_list[i]);
+                        break;
+                    }
+                }
+                freeDeviceList(dev_list);
+            }
+            printf("%s\n", udid);
+            getAppList(udid);
         }
         else if (strcmp(command, "shell") == 0)
         {
