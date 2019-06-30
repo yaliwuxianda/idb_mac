@@ -27,6 +27,51 @@ idevice_t device = NULL;
 afc_client_t afcclient = NULL;
 char *appid = NULL;
 char *udid = NULL;
+
+//读取文件内容
+void readFileContent(char *path, char *currcmd)
+{
+    FILE *file = fopen(path, "r");
+    if (file == NULL)
+    {
+        return;
+    }
+    char s[2];
+    int num = 0;
+    char *lastcmd;
+    while ((fgets(s, 2, file)) != NULL)
+    {
+        num++;
+        if (!lastcmd)
+        {
+            currcmd = malloc((num + 1) * sizeof(char *));
+            sprintf(currcmd, "%s", s);
+            lastcmd = malloc((num + 1) * sizeof(char *));
+            strcpy(lastcmd, currcmd);
+        }
+        else
+        {
+            free(currcmd);
+            currcmd = malloc((num + 1) * sizeof(char *));
+            sprintf(currcmd, "%s%s", lastcmd, s);
+            free(lastcmd);
+            lastcmd = malloc(2 * num * sizeof(char *));
+            strcpy(lastcmd, currcmd);
+        }
+    }
+    free(lastcmd);
+    fclose(file);
+}
+void writeFileContent(char *filepath, char *content)
+{
+    FILE *file = fopen(filepath, "w");
+    if (file == NULL)
+    {
+        return;
+    }
+    fwrite(content, strlen(content) + 1, 1, file);
+    fclose(file);
+}
 //切割字符串
 void split(char *src, const char *separator, char **dest, int *num)
 {
@@ -48,6 +93,29 @@ void split(char *src, const char *separator, char **dest, int *num)
         pNext = strtok(NULL, separator);
     }
     *num = count;
+}
+void saveAu()
+{
+    char *content = malloc((strlen(appid) + strlen(udid) + 1) * sizeof(char *));
+    sprintf(content, "%s\n%s", appid, udid);
+    writeFileContent("au.txt", content);
+    free(content);
+}
+void readAu()
+{
+    char *content;
+    readFileContent("au.txt", content);
+    if (content != NULL)
+    {
+        char *arr[3];
+        int num = 0;
+        split(content, "\n", arr, &num);
+        if (num >= 2)
+        {
+            appid = arr[0];
+            udid = arr[1];
+        }
+    }
 }
 void getAFCClient(char *udid, char *appid, afc_client_t *afc_client)
 {
@@ -386,6 +454,7 @@ char *execCommand(char *cmd)
             }
             else
             {
+                saveAu();
                 return "connect success\n";
             }
         }
@@ -409,8 +478,7 @@ char *execCommand(char *cmd)
 
             afc_error_t afc_err = copyFileToDevice(afcclient, pdir, tdir);
 
-
-printf("%d\n---",afc_err);
+            printf("%d\n---", afc_err);
 
             if (afc_err == 0)
                 return "Success\n";
@@ -437,28 +505,13 @@ printf("%d\n---",afc_err);
     }
     return "Failed\n";
 }
-void saveCommandToFile(char *cmd)
-{
-    FILE *file = fopen("cmd.txt", "w");
-    fwrite(cmd, strlen(cmd) * sizeof(char *), 1, file);
-    fclose(file);
-}
-char *readCommandFromFile()
-{
-    char *cmd = malloc(sizeof(char *) * 1024);
-    FILE *file = fopen("cmd.txt", "r");
-    fread(cmd, strlen(cmd) + 1, 1, file);
-    fclose(file);
-
-    remove("cmd.txt");
-}
 //异常退出
 void signal_crash_handler(int sig)
 {
-    //server_backtrace(sig);    
+    //server_backtrace(sig);
     exit(-1);
 }
- //正常退出
+//正常退出
 void signal_exit_handler(int sig)
 {
     exit(0);
@@ -520,6 +573,21 @@ len:
 *************************************************************************************************************************/
 int main(int argc, char *argv[])
 {
+    //读取当前设备
+    readAu();
+    if (udid != NULL && appid != NULL)
+    {
+        printf("111111\n");
+        getAFCClient(udid, appid, &afcclient);
+    }
+    //执行本地命令
+    if(afcclient!=NULL)
+    {
+        char *cmd;
+        readFileContent("cmd.txt",cmd);
+        printf("%s\n",cmd);
+    }
+
     atexit(signal_exit_handler);
     signal(SIGTERM, signal_exit_handler);
     signal(SIGINT, signal_exit_handler);
@@ -557,13 +625,26 @@ int main(int argc, char *argv[])
         {
             buff[numbytes] = '\0';
             printf("command：%s\n", buff);
+
+            //先将命令转换为char *
+            int len = numbytes;
+            char *cmd = malloc(len * sizeof(char *));
+            for (int i = 0; i < len; i++)
+            {
+                char c = buff[i];
+                sprintf(cmd, "%s%c", cmd, c);
+            }
+            //转换完毕
+
             char *result = execCommand(buff);
             if (strcmp(result, "reboot") == 0)
             {
-                saveCommandToFile(buff);
+                writeFileContent("cmd.txt", cmd);
+                free(cmd);
                 exit = 1;
                 break;
             }
+            free(cmd);
             if (send(new_fd, result, strlen(result) * sizeof(result), 0) < 0)
             {
                 perror("write");
@@ -579,7 +660,6 @@ int main(int argc, char *argv[])
     close(fd);
     if (exit != 0)
     {
-        system("./idbserver");
         return exit;
     }
     return 0;
