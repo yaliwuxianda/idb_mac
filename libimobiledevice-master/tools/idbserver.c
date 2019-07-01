@@ -29,15 +29,16 @@ char *appid = NULL;
 char *udid = NULL;
 
 //读取文件内容
-void readFileContent(char *path, char *currcmd)
+char * readFileContent(char *path)
 {
     FILE *file = fopen(path, "r");
     if (file == NULL)
     {
-        return;
+        return NULL;
     }
     char s[2];
     int num = 0;
+    char *currcmd;
     char *lastcmd;
     while ((fgets(s, 2, file)) != NULL)
     {
@@ -61,6 +62,8 @@ void readFileContent(char *path, char *currcmd)
     }
     free(lastcmd);
     fclose(file);
+
+    return currcmd;
 }
 void writeFileContent(char *filepath, char *content)
 {
@@ -103,8 +106,7 @@ void saveAu()
 }
 void readAu()
 {
-    char *content;
-    readFileContent("au.txt", content);
+    char *content=readFileContent("au.txt");
     if (content != NULL)
     {
         char *arr[3];
@@ -577,15 +579,20 @@ int main(int argc, char *argv[])
     readAu();
     if (udid != NULL && appid != NULL)
     {
-        printf("111111\n");
         getAFCClient(udid, appid, &afcclient);
     }
     //执行本地命令
     if(afcclient!=NULL)
     {
-        char *cmd;
-        readFileContent("cmd.txt",cmd);
+        char *cmd=readFileContent("cmd.txt");
+        execCommand(cmd);
         printf("%s\n",cmd);
+        //删除cmd.txt
+        remove("cmd.txt");
+    }
+    else
+    {
+        remove("au.txt");
     }
 
     atexit(signal_exit_handler);
