@@ -681,23 +681,58 @@ int getFileSize(char *filename)
     int size = statbuf.st_size;
     return size;
 }
+// 计时线程，等待超过一定时间推出程序
+int timerThreadExit;
+void timerThread(void)
+{
+    sleep(1);
+    if (timerThreadExit == 1)
+    {
+        exit(0);
+    }
+}
 void sendMsg(char *char_send)
 {
     int sockfd, numbytes;
     char buf[BUFSIZ];
     struct sockaddr_in their_addr;
-    while ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+
+    while ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
         ;
+    bzero(&(their_addr), sizeof(their_addr));
     their_addr.sin_family = AF_INET;
-    their_addr.sin_port = 8080;
-    their_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    bzero(&(their_addr.sin_zero), 8);
-    while (connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1)
-        ;
-    numbytes = send(sockfd, char_send, strlen(char_send), 0);
-    numbytes = recv(sockfd, buf, BUFSIZ, 0);
+    their_addr.sin_addr.s_addr = inet_addr("127.0.0.1"); //这里不一样
+    their_addr.sin_port = htons(8080);
+    int len = sizeof(their_addr);
+
+    int datalen = strlen(char_send) * sizeof(char *);
+
+label1:
+    while (1)
+    {
+        numbytes = sendto(sockfd, char_send, datalen, 0, (struct sockaddr *)&their_addr, len);
+        if (numbytes < 0)
+        {
+            printf("sending\n");
+            continue;
+        }
+        pthread_t p;
+        timerThreadExit = 1;
+        pthread_create(&p, NULL, (void *)timerThread, NULL);
+        numbytes = recvfrom(sockfd, buf, BUFSIZ, 0, (struct sockaddr *)&their_addr, &len);
+        timerThreadExit = 0;
+        if (numbytes > 0)
+            break;
+        else
+            sleep(1);
+    }
     buf[numbytes] = '\0';
     printf("%s\n", buf);
+    if (strcmp(buf,"0")!=0)
+    {
+        goto label1;
+    }
+
     close(sockfd);
 }
 int main(int argc, const char *args[])

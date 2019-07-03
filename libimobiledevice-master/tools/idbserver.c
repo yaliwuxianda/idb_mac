@@ -27,7 +27,6 @@ idevice_t device = NULL;
 afc_client_t afcclient = NULL;
 char *appid = NULL;
 char *udid = NULL;
-
 //读取文件内容
 char * readFileContent(char *path)
 {
@@ -331,7 +330,7 @@ afc_error_t copyFileToDevice(afc_client_t client, char *sourceFilePath, char *ta
 
     FILE *infile;
     infile = fopen(sourceFilePath, "rb");
-    unsigned char *bs = malloc(bysize * sizeof(unsigned char *));
+    unsigned char *bs = malloc(bysize);
     if (infile == NULL)
         error = 1;
     int filelen = fread(bs, 1, bysize, infile);
@@ -457,7 +456,7 @@ char *execCommand(char *cmd)
             else
             {
                 saveAu();
-                return "connect success\n";
+                return "0";
             }
         }
         else if (strcmp(command, "mkdir") == 0)
@@ -469,7 +468,7 @@ char *execCommand(char *cmd)
             strncpy(tempstr, todir, 1);
             afc_error_t afc_err = afc_make_directory(afcclient, todir);
             if (afc_err == 0)
-                return "Success\n";
+                return "0";
             else
                 return "Fail";
         }
@@ -480,10 +479,10 @@ char *execCommand(char *cmd)
 
             afc_error_t afc_err = copyFileToDevice(afcclient, pdir, tdir);
 
-            printf("%d\n---", afc_err);
+            printf("%d\n", afc_err);
 
             if (afc_err == 0)
-                return "Success\n";
+                return "0";
             else if (afc_err == 8)
             {
                 //应用已经重新安装了
@@ -500,7 +499,7 @@ char *execCommand(char *cmd)
             afc_error_t afc_err = copyFileFromDevice(afcclient, pdir, tdir);
 
             if (afc_err == 0)
-                return "Success\n";
+                return "0";
             else
                 return "Failed\n";
         }
@@ -584,11 +583,19 @@ int main(int argc, char *argv[])
     //执行本地命令
     if(afcclient!=NULL)
     {
+        printf("connect success\n");
         char *cmd=readFileContent("cmd.txt");
-        execCommand(cmd);
-        printf("%s\n",cmd);
-        //删除cmd.txt
-        remove("cmd.txt");
+        if(cmd)
+        {
+            execCommand(cmd);
+            printf("%s\n",cmd);
+            //删除cmd.txt
+            remove("cmd.txt");
+        }
+        else
+        {
+            printf("No Command\n");
+        }
     }
     else
     {
@@ -607,28 +614,27 @@ int main(int argc, char *argv[])
     signal(SIGFPE, signal_crash_handler);  // SIGFPE，数学相关的异常，如被0除，浮点溢出，等等
     signal(SIGABRT, signal_crash_handler); // SIGABRT，由调用abort函数产生，进程非正常退出
 
-    int fd, new_fd, struct_len, numbytes, i;
+    int fd, numbytes, i;
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
     char buff[BUFSIZ];
 
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = 8080;
-    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    bzero(&(server_addr), sizeof(server_addr));
+    server_addr.sin_family=AF_INET;
+    server_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+    server_addr.sin_port=htons(8080);
+    int len=sizeof(server_addr);
 
-    bzero(&(server_addr.sin_zero), 8);
-    struct_len = sizeof(struct sockaddr_in);
-
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-    while (bind(fd, (struct sockaddr *)&server_addr, struct_len) == -1)
-        ;
-    while (listen(fd, 10) == -1)
-        ;
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    int result=0;
+    while((result=bind(fd, (struct sockaddr *)&server_addr, len))==-1);
+    printf("1010101010==$$$%d\n",result);
+    
     int exit = 0;
     while (1)
     {
-        new_fd = accept(fd, (struct sockaddr *)&client_addr, &struct_len);
-        while ((numbytes = recv(new_fd, buff, BUFSIZ, 0)) > 0)
+        printf("%d\n",numbytes);
+        while ((numbytes = recvfrom(fd,buff,BUFSIZ,0,(struct sockaddr *)&server_addr,&len)) > 0)
         {
             buff[numbytes] = '\0';
             printf("command：%s\n", buff);
@@ -642,7 +648,6 @@ int main(int argc, char *argv[])
                 sprintf(cmd, "%s%c", cmd, c);
             }
             //转换完毕
-
             char *result = execCommand(buff);
             if (strcmp(result, "reboot") == 0)
             {
@@ -652,22 +657,20 @@ int main(int argc, char *argv[])
                 break;
             }
             free(cmd);
-            if (send(new_fd, result, strlen(result) * sizeof(result), 0) < 0)
+            if (sendto(fd,result,strlen(result) * sizeof(result),0,(struct sockaddr *)&server_addr,sizeof(server_addr)) < 0)
             {
-                perror("write");
-                return 1;
+                exit = 1;
+                break;
             }
         }
         if (exit == 1)
         {
             break;
         }
+        sleep(1);
     }
-    close(new_fd);
     close(fd);
     if (exit != 0)
-    {
         return exit;
-    }
     return 0;
 }
