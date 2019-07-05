@@ -90,7 +90,8 @@ idbserver-idbserver.o: idbserver.c /usr/include/pthread.h \
   /usr/include/sys/_types/_posix_vdisable.h \
   /usr/include/sys/_types/_seek_set.h /usr/include/sys/select.h \
   /usr/include/sys/_select.h /usr/include/sys/_types/_uuid_t.h \
-  /usr/include/gethostuuid.h /usr/include/signal.h
+  /usr/include/gethostuuid.h /usr/include/signal.h /usr/include/pwd.h \
+  /usr/include/uuid/uuid.h
 
 /usr/include/pthread.h:
 
@@ -395,3 +396,7 @@ idbserver-idbserver.o: idbserver.c /usr/include/pthread.h \
 /usr/include/gethostuuid.h:
 
 /usr/include/signal.h:
+
+/usr/include/pwd.h:
+
+/usr/include/uuid/uuid.h:

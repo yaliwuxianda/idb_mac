@@ -23,13 +23,19 @@
 #include <signal.h>
 #include <stdlib.h>
 
+#include <pwd.h>
+
+char *currdir;
 idevice_t device = NULL;
 afc_client_t afcclient = NULL;
 char *appid = NULL;
 char *udid = NULL;
 //读取文件内容
-char * readFileContent(char *path)
+char *readFileContent(char *path1)
 {
+    char *path=malloc(strlen(path1)+strlen(currdir));
+    sprintf(path,"%s%s",currdir,path1);
+
     FILE *file = fopen(path, "r");
     if (file == NULL)
     {
@@ -61,11 +67,15 @@ char * readFileContent(char *path)
     }
     free(lastcmd);
     fclose(file);
+    //free(path);
 
     return currcmd;
 }
-void writeFileContent(char *filepath, char *content)
+void writeFileContent(char *filepath1, char *content)
 {
+    char *filepath=malloc(strlen(filepath1)+strlen(currdir));
+    sprintf(filepath,"%s%s",currdir,filepath1);
+
     FILE *file = fopen(filepath, "w");
     if (file == NULL)
     {
@@ -73,6 +83,8 @@ void writeFileContent(char *filepath, char *content)
     }
     fwrite(content, strlen(content) + 1, 1, file);
     fclose(file);
+
+    free(filepath);
 }
 //切割字符串
 void split(char *src, const char *separator, char **dest, int *num)
@@ -105,7 +117,7 @@ void saveAu()
 }
 void readAu()
 {
-    char *content=readFileContent("au.txt");
+    char *content = readFileContent("au.txt");
     if (content != NULL)
     {
         char *arr[3];
@@ -574,6 +586,13 @@ len:
 *************************************************************************************************************************/
 int main(int argc, char *argv[])
 {
+    //获取当前路径
+    struct passwd *pwd;
+    pwd = getpwuid(getuid());
+    currdir=malloc(strlen(pwd->pw_name)+8);
+    sprintf(currdir,"/users/%s/",pwd->pw_name);
+
+
     //读取当前设备
     readAu();
     if (udid != NULL && appid != NULL)
@@ -581,14 +600,14 @@ int main(int argc, char *argv[])
         getAFCClient(udid, appid, &afcclient);
     }
     //执行本地命令
-    if(afcclient!=NULL)
+    if (afcclient != NULL)
     {
         printf("connect success\n");
-        char *cmd=readFileContent("cmd.txt");
-        if(cmd)
+        char *cmd = readFileContent("cmd.txt");
+        if (cmd)
         {
             execCommand(cmd);
-            printf("%s\n",cmd);
+            printf("%s\n", cmd);
             //删除cmd.txt
             remove("cmd.txt");
         }
@@ -620,21 +639,22 @@ int main(int argc, char *argv[])
     char buff[BUFSIZ];
 
     bzero(&(server_addr), sizeof(server_addr));
-    server_addr.sin_family=AF_INET;
-    server_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    server_addr.sin_port=htons(8080);
-    int len=sizeof(server_addr);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_addr.sin_port = htons(8080);
+    int len = sizeof(server_addr);
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
-    int result=0;
-    while((result=bind(fd, (struct sockaddr *)&server_addr, len))==-1);
-    printf("1010101010==$$$%d\n",result);
-    
+    int result = 0;
+    while ((result = bind(fd, (struct sockaddr *)&server_addr, len)) == -1)
+        ;
+    printf("1010101010==$$$%d\n", result);
+
     int exit = 0;
     while (1)
     {
-        printf("%d\n",numbytes);
-        while ((numbytes = recvfrom(fd,buff,BUFSIZ,0,(struct sockaddr *)&server_addr,&len)) > 0)
+        printf("%d\n", numbytes);
+        while ((numbytes = recvfrom(fd, buff, BUFSIZ, 0, (struct sockaddr *)&server_addr, &len)) > 0)
         {
             buff[numbytes] = '\0';
             printf("command：%s\n", buff);
@@ -657,7 +677,7 @@ int main(int argc, char *argv[])
                 break;
             }
             free(cmd);
-            if (sendto(fd,result,strlen(result) * sizeof(result),0,(struct sockaddr *)&server_addr,sizeof(server_addr)) < 0)
+            if (sendto(fd, result, strlen(result) * sizeof(result), 0, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
             {
                 exit = 1;
                 break;
