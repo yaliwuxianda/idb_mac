@@ -25,6 +25,8 @@
 
 #include <pwd.h>
 
+int serverSocket,clientSocket;
+
 char *currdir;
 idevice_t device = NULL;
 afc_client_t afcclient = NULL;
@@ -33,8 +35,10 @@ char *udid = NULL;
 //读取文件内容
 char *readFileContent(char *path1)
 {
-    char *path=malloc(strlen(path1)+strlen(currdir));
-    sprintf(path,"%s%s",currdir,path1);
+    char *path = malloc(strlen(path1) + strlen(currdir));
+    sprintf(path, "%s%s", currdir, path1);
+
+printf("%s\n",path);
 
     FILE *file = fopen(path, "r");
     if (file == NULL)
@@ -73,8 +77,8 @@ char *readFileContent(char *path1)
 }
 void writeFileContent(char *filepath1, char *content)
 {
-    char *filepath=malloc(strlen(filepath1)+strlen(currdir));
-    sprintf(filepath,"%s%s",currdir,filepath1);
+    char *filepath = malloc(strlen(filepath1) + strlen(currdir));
+    sprintf(filepath, "%s%s", currdir, filepath1);
 
     FILE *file = fopen(filepath, "w");
     if (file == NULL)
@@ -339,19 +343,18 @@ afc_error_t copyFileToDevice(afc_client_t client, char *sourceFilePath, char *ta
     afc_error_t error = 0;
     //获取文件大小
     int bysize = getFileSize(sourceFilePath);
-
     FILE *infile;
     infile = fopen(sourceFilePath, "rb");
-    unsigned char *bs = malloc(bysize);
     if (infile == NULL)
+    {
         error = 1;
+        return error;
+    }
+    unsigned char *bs = malloc(bysize);
     int filelen = fread(bs, 1, bysize, infile);
     fclose(infile);
-
     error = 0;
-
     long filehandle = 0;
-
     if (error == 0)
     {
         char *ks[10];
@@ -360,9 +363,9 @@ afc_error_t copyFileToDevice(afc_client_t client, char *sourceFilePath, char *ta
         char *targetFilePath = malloc(sizeof(char *) * 200);
         if (targetDir[strlen(targetDir) - 1] == '/')
         {
-            char *tempdir = malloc(sizeof(char *) * 200);
+             char *tempdir = malloc(sizeof(char *) * 200);
             sprintf(tempdir, "%s%s", targetDir, ks[num - 1]);
-            strcpy(targetFilePath, tempdir);
+             strcpy(targetFilePath, tempdir);
             free(tempdir);
         }
         else
@@ -373,8 +376,9 @@ afc_error_t copyFileToDevice(afc_client_t client, char *sourceFilePath, char *ta
         if (error == 0)
         {
             int bytesWritten = 0;
+            
             error = afc_file_write(client, filehandle, bs, filelen, &bytesWritten);
-            if (error == 0)
+             if (error == 0)
             {
                 error = afc_file_close(client, filehandle);
             }
@@ -476,8 +480,6 @@ char *execCommand(char *cmd)
             char *todir = malloc(sizeof(char *) * 200);
             strcpy(todir, ks[1]);
 
-            char tempstr[1];
-            strncpy(tempstr, todir, 1);
             afc_error_t afc_err = afc_make_directory(afcclient, todir);
             if (afc_err == 0)
                 return "0";
@@ -488,9 +490,7 @@ char *execCommand(char *cmd)
         {
             char *pdir = ks[1];
             char *tdir = ks[2];
-
             afc_error_t afc_err = copyFileToDevice(afcclient, pdir, tdir);
-
             printf("%d\n", afc_err);
 
             if (afc_err == 0)
@@ -521,12 +521,25 @@ char *execCommand(char *cmd)
 //异常退出
 void signal_crash_handler(int sig)
 {
+    printf("捕获错误\n");
     //server_backtrace(sig);
+    
+    close(clientSocket);
+    close(serverSocket);
+    clientSocket=NULL;
+    serverSocket=NULL;
+
     exit(-1);
 }
 //正常退出
 void signal_exit_handler(int sig)
 {
+   
+    close(clientSocket);
+    close(serverSocket);
+     clientSocket=NULL;
+    serverSocket=NULL;
+
     exit(0);
 }
 /************************************************************************************************************************
@@ -589,9 +602,8 @@ int main(int argc, char *argv[])
     //获取当前路径
     struct passwd *pwd;
     pwd = getpwuid(getuid());
-    currdir=malloc(strlen(pwd->pw_name)+8);
-    sprintf(currdir,"/users/%s/",pwd->pw_name);
-
+    currdir = malloc(strlen(pwd->pw_name) + 8);
+    sprintf(currdir, "/users/%s/", pwd->pw_name);
 
     //读取当前设备
     readAu();
@@ -599,27 +611,27 @@ int main(int argc, char *argv[])
     {
         getAFCClient(udid, appid, &afcclient);
     }
-    //执行本地命令
-    if (afcclient != NULL)
-    {
-        printf("connect success\n");
-        char *cmd = readFileContent("cmd.txt");
-        if (cmd)
-        {
-            execCommand(cmd);
-            printf("%s\n", cmd);
-            //删除cmd.txt
-            remove("cmd.txt");
-        }
-        else
-        {
-            printf("No Command\n");
-        }
-    }
-    else
-    {
-        remove("au.txt");
-    }
+    // //执行本地命令
+    // if (afcclient != NULL)
+    // {
+    //     printf("connect success\n");
+    //     char *cmd = readFileContent("cmd.txt");
+    //     if (cmd)
+    //     {
+    //         printf("%s\n", cmd);
+    //         execCommand(cmd);
+    //         //删除cmd.txt
+    //         remove("cmd.txt");
+    //     }
+    //     else
+    //     {
+    //         printf("No Command\n");
+    //     }
+    // }
+    // else
+    // {
+    //     remove("au.txt");
+    // }
 
     atexit(signal_exit_handler);
     signal(SIGTERM, signal_exit_handler);
@@ -633,63 +645,100 @@ int main(int argc, char *argv[])
     signal(SIGFPE, signal_crash_handler);  // SIGFPE，数学相关的异常，如被0除，浮点溢出，等等
     signal(SIGABRT, signal_crash_handler); // SIGABRT，由调用abort函数产生，进程非正常退出
 
-    int fd, numbytes, i;
+    int numbytes,i;
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
+
+    int client_addr_len = sizeof(client_addr);
+
     char buff[BUFSIZ];
 
     bzero(&(server_addr), sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port = htons(8080);
+    server_addr.sin_port = htons(8020);
     int len = sizeof(server_addr);
 
-    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+    /*
+    为了解决程序异常退出之后，端口仍然被占用问题
+    端口复用
+    */
+    int mw_optval = 1;
+    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&mw_optval,sizeof(mw_optval));
+
     int result = 0;
-    while ((result = bind(fd, (struct sockaddr *)&server_addr, len)) == -1)
-        ;
-    printf("1010101010==$$$%d\n", result);
+    printf("开始绑定\n");
+    while ((result = bind(serverSocket, (struct sockaddr *)&server_addr, len)) == -1)
+    {
+        printf("binding %d\n",result);
+        sleep(1);
+    }
+    
+    printf("绑定成功\n");
+
+    while (listen(serverSocket, 5) == -1);
+
+    printf("监听成功\n");
 
     int exit = 0;
     while (1)
     {
-        printf("%d\n", numbytes);
-        while ((numbytes = recvfrom(fd, buff, BUFSIZ, 0, (struct sockaddr *)&server_addr, &len)) > 0)
+        while((clientSocket = accept(serverSocket, (struct sockaddr *)&client_addr, (socklen_t *)&client_addr_len))==-1)
         {
-            buff[numbytes] = '\0';
-            printf("command：%s\n", buff);
-
-            //先将命令转换为char *
-            int len = numbytes;
-            char *cmd = malloc(len * sizeof(char *));
-            for (int i = 0; i < len; i++)
-            {
-                char c = buff[i];
-                sprintf(cmd, "%s%c", cmd, c);
-            }
-            //转换完毕
-            char *result = execCommand(buff);
-            if (strcmp(result, "reboot") == 0)
-            {
-                writeFileContent("cmd.txt", cmd);
-                free(cmd);
-                exit = 1;
-                break;
-            }
-            free(cmd);
-            if (sendto(fd, result, strlen(result) * sizeof(result), 0, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
-            {
-                exit = 1;
-                break;
-            }
+            printf("accepting");
+            sleep(1);
         }
+        while ((numbytes = recv(clientSocket, buff, BUFSIZ, 0)) <= 0)
+        {
+            printf("receiving");
+            sleep(1);
+        }
+        
+        printf("receiving ---%d\n",numbytes);
+
+        buff[numbytes] = '\0';
+
+        printf("command：%s\n", buff);
+
+        //先将命令转换为char *
+        int len = numbytes;
+        char *cmd = malloc(len * sizeof(char *));
+        for (int i = 0; i < len; i++)
+        {
+            char c = buff[i];
+            sprintf(cmd, "%s%c", cmd, c);
+        }
+       
+        //转换完毕
+        char *result = execCommand(cmd);
+        if (strcmp(result, "reboot") == 0)
+        {
+            // writeFileContent("cmd.txt", cmd);
+            free(cmd);
+            exit = 1;
+            break;
+        }
+        else
+        {
+            free(cmd);
+        }
+        cmd=NULL;
+        while ((numbytes=send(clientSocket, result, strlen(result) * sizeof(result), 0)) <= 0)
+        {
+            printf("sending");
+            sleep(1);
+        }
+        printf("sending ---%d\n",numbytes);
         if (exit == 1)
         {
             break;
         }
-        sleep(1);
     }
-    close(fd);
+    close(clientSocket);
+    close(serverSocket);
+    
     if (exit != 0)
         return exit;
     return 0;

@@ -693,39 +693,53 @@ void timerThread(void)
 }
 void sendMsg(char *char_send)
 {
-    int sockfd, numbytes;
+    
+    int clientSocket, numbytes;
     char buf[BUFSIZ];
     struct sockaddr_in their_addr;
 
-    while ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-        ;
     bzero(&(their_addr), sizeof(their_addr));
     their_addr.sin_family = AF_INET;
-    their_addr.sin_addr.s_addr = inet_addr("127.0.0.1"); //这里不一样
-    their_addr.sin_port = htons(8080);
+    their_addr.sin_addr.s_addr = inet_addr("127.0.0.1"); 
+    their_addr.sin_port = htons(8020);
+
+label1:
+
+    while ((clientSocket = socket(AF_INET, SOCK_STREAM, 0)) == -1);
+    
     int len = sizeof(their_addr);
+
+    if(connect(clientSocket, (struct sockaddr *)&their_addr,len) == -1)
+    {
+       close(clientSocket);
+       clientSocket=NULL;
+       sleep(1);
+       goto label1;
+    }
 
     int datalen = strlen(char_send) * sizeof(char *);
 
-label1:
-    while (1)
+
+    if((numbytes = send(clientSocket, char_send, datalen, 0))<=0)
     {
-        numbytes = sendto(sockfd, char_send, datalen, 0, (struct sockaddr *)&their_addr, len);
-        if (numbytes < 0)
-        {
-            printf("sending\n");
-            continue;
-        }
-        pthread_t p;
-        timerThreadExit = 1;
-        pthread_create(&p, NULL, (void *)timerThread, NULL);
-        numbytes = recvfrom(sockfd, buf, BUFSIZ, 0, (struct sockaddr *)&their_addr, &len);
-        timerThreadExit = 0;
-        if (numbytes > 0)
-            break;
-        else
-            sleep(1);
+        close(clientSocket);
+        clientSocket=NULL;
+        sleep(1);
+        goto label1;
     }
+
+    printf("sending %d\n",numbytes);
+
+    if((numbytes = recv(clientSocket, buf, BUFSIZ, 0))<=0)
+    {
+        close(clientSocket);
+        clientSocket=NULL;
+        sleep(1);
+        goto label1;
+    }
+
+    printf("receiving %d\n",numbytes);
+
     buf[numbytes] = '\0';
     printf("%s\n", buf);
     if (strcmp(buf,"0")!=0)
@@ -733,7 +747,7 @@ label1:
         goto label1;
     }
 
-    close(sockfd);
+    close(clientSocket);
 }
 int main(int argc, const char *args[])
 {
@@ -834,12 +848,24 @@ int main(int argc, const char *args[])
             free(cmd);
         }
         else if (strcmp(command, "push") == 0 ||
-                 strcmp(command, "pull") == 0)
+                 strcmp(command, "pull") == 0||
+                 strcmp(command,"mkdir")==0)
         {
-            char *c1 = args[2];
-            char *c2 = args[3];
-            char *cmd = malloc((strlen(c1) + strlen(c2) + 2 + strlen(command)) * sizeof(char *));
-            sprintf(cmd, "%s %s %s", command, c1, c2);
+            char *cmd=NULL;
+            printf("%d\n",argc);
+            if(argc==4)
+            {
+                char *c1 = args[2];
+                char *c2 = args[3];
+                cmd = malloc((strlen(c1) + strlen(c2) + 2 + strlen(command)) * sizeof(char *));
+                sprintf(cmd, "%s %s %s", command, c1, c2);
+            }
+            else if(argc==3)
+            {
+                char *c1 = args[2];
+                cmd = malloc((strlen(c1) + 1 + strlen(command)) * sizeof(char *));
+                sprintf(cmd, "%s %s", command, c1);
+            }
 
             printf("send  %s\n", cmd);
 
